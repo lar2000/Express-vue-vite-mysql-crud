@@ -1,0 +1,12 @@
+SELECT 
+village_id,
+tbl_district.district_id,
+tbl_province.province_id,
+name,
+district_name,
+province_name
+
+ FROM tbl_village 
+LEFT JOIN tbl_district ON tbl_village.district_id=tbl_district.district_id
+left JOIN tbl_province on tbl_district.province_id_fk=tbl_province.province_id  
+WHERE province_id_fk=1001 AND tbl_village.district_id=10008

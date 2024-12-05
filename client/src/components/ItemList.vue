@@ -26,7 +26,7 @@
     </table>
     
     <!-- Add Item Button -->
-    <button class="btn add-btn" @click="showAddForm = !showAddForm">
+    <button class="btn add-btn" @click="resetForm">
       {{ showAddForm ? 'Cancel' : 'AddItem' }}
     </button>
 
@@ -41,6 +41,7 @@
 
 <script>
 import axios from 'axios';
+import Swat from 'sweetalert2';
 
 export default {
   data() {
@@ -64,9 +65,18 @@ export default {
       const response = await axios.get('http://localhost:5000/items');
       this.items = response.data;
     },
+    resetForm() {
+    this.showAddForm = !this.showAddForm;
+
+    if (!this.showAddForm) {
+      // Reset the form and editing state when the form is hidden
+      this.newItem = { name: '', description: '' };
+      this.isEditing = false;
+      this.currentItemId = null;
+    }
+  },
     async addItem() {
       await axios.post('http://localhost:5000/items', this.newItem);
-      this.fetchItems();
       this.newItem.name = '';
       this.newItem.description = '';
       this.showAddForm = false; 
@@ -74,42 +84,88 @@ export default {
     async editItem(id) {
       const item = this.items.find((item) => item.id === id);
       this.newItem = { ...item };  // Set the form fields to the current item data
-      this.showAddForm = true;  // Show the form
-      this.isEditing = true;  // Set the flag to true since we are editing
-      this.currentItemId = id;  // Store the ID of the item being edited
+      this.showAddForm = true; 
+      this.isEditing = true;  
+      this.currentItemId = id;  
     },
 
     async saveItem() {
       try {
         if (!this.newItem.name || !this.newItem.description) {
-          alert('Input fill in all fields !!')
+          //alert('Input fill in all fields !!')
+          Swat.fire('Warning', 'Pleas fill in all fields!', 'warning')
           return;
         }
         if (this.isEditing) {
+          // ##  JavaScript confirm--------->>>
+
+          // const confUpdate = confirm('Are you sure you want to update?');
+          // if (!confUpdate) {
+          //   return;
+          // }
+
+          // ## Sweetalert confrim-------->>
+          const confUpdate = await Swat.fire ({
+            title: 'Are you sure?',
+            text: 'Do you want to update this?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, update it!',
+            cancelButtonText: 'Cancel'
+          });
+            if (!confUpdate.isConfirmed) {
+              return;
+            }
           // If we are editing, send a PUT request to update the item
           await axios.put(`http://localhost:5000/items/${this.currentItemId}`, this.newItem);
-          console.log("Item updated successfully");
+          //console.log("Item updated successfully");
+          Swat.fire('Updated!', 'Updated successfully.!', 'success');
+
           this.isEditing = false;
         } else {
           // If we are adding, send a POST request
           const response = await axios.post('http://localhost:5000/items', this.newItem);
-          console.log("New item added successfully:", response.data);
+          //console.log("New item added successfully:", response.data);
+          Swat.fire('Added!', 'Added successfully!', 'success')
         }
+        
 
         // ຫຼັງ ຈາກ save, ຈະ updated ລາຍ ການ ແລະ ລ້າງ ຟອມ
         this.fetchItems();
-        this.newItem.name = '';
-        this.newItem.description = '';
+        this.resetForm();
         this.showAddForm = false;
       } catch (error) {
-        console.error("Error saving item:", error.response ? error.response.data : error.message);
+        //console.error("Error saving item:", error.response ? error.response.data : error.message);
+        Swat.fire('Error!', error.response ? error.response.data : error.message, 'error');
+
       }
     },
     async deleteItem(id) {
-      await axios.delete(`http://localhost:5000/items/${id}`);
-      this.fetchItems();
+
+      // ## JavaScript confrim-------------->>>
+      // const confDelete = confirm('Are you sure you want to delete?');
+      // if (!confDelete) {
+      //   return;
+      // }
+      const confDelete = await Swat.fire ({
+        title: 'Are you sure?',
+        text: 'This action cannot be undone!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      });
+          if (confDelete.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:5000/items/${id}`);
+          Swat.fire('Deleted!', 'The item has been deleted successfully.', 'success');
+          this.fetchItems();
+        } catch (error) {
+          Swat.fire('Error!', error.response ? error.response.data : error.message, 'error');
+        }
+      }
+      }
     },
-  },
   mounted() {
     this.fetchItems();
   },
