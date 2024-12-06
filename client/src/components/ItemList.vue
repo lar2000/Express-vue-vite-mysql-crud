@@ -18,8 +18,8 @@
           <td>{{ item.name }}</td>
           <td>{{ item.description }}</td>
           <td>
-            <button class="btn edit-btn" @click="editItem(item.id)">Edit</button>
-            <button class="btn delete-btn" @click="deleteItem(item.id)">Delete</button>
+            <button class="btn edit-btn" @click="editItem(item.id)"><i class='bx bx-edit-alt'></i></button>
+            <button class="btn delete-btn" @click="deleteItem(item.id)"><i class='bx bx-trash'></i></button>
           </td>
         </tr>
       </tbody>
