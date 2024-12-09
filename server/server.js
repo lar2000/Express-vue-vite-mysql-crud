@@ -7,9 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // To parse JSON bodies
 
-const api = require('./api');
+const city = require('./api/city');
+const item = require('./api/items');
+const user = require('./api/users');
 
-app.use('/', api)
+app.use('/', city)
+app.use('/', item)
+app.use('/', user)
 
 // Start server
 const port = process.env.PORT || 5000;

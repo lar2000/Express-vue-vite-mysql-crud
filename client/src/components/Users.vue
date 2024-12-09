@@ -63,13 +63,25 @@
                       <input type="text" v-model="currentUser.village" placeholder="Enter village" required />
                   </div>
                   <div class="form-group">
-                      <label for="district">District:</label>
-                      <input type="text" v-model="currentUser.district" placeholder="Enter district" required />
-                  </div>
-                  <div class="form-group">
                       <label for="province">Province:</label>
-                      <input type="text" v-model="currentUser.province" placeholder="Enter province" required />
-                  </div>
+                      <select v-model="currentProvince.province_id" @change="updateDistricts" required>
+                        <option value="" disabled selected>Select province</option>
+                        <option v-for="province in Province" :key="province.province_id" :value="province.province_id">
+                          {{ province.province_name }}
+                          </option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="district">District:</label>
+                      <select v-model="currentDistrict.district_id" :disabled="!currentProvince.province_id" required>
+                        <option value="" disabled selected>Select district</option>
+                        <option v-for="district in filteredDistricts" :key="district.district_id" :value="district.district_id">
+                          {{ district.district_name }}
+                          </option>
+                      </select>
+                    </div>
+
                   <div class="modal-actions">
                       <button type="submit" class="btn btn-save">
                           {{ modalAction }}
@@ -85,12 +97,16 @@
 </template>
 
 <script>
+import api from '../http'
 import ax from "axios";
+import Swat from "sweetalert2";
 
 export default {
   data() {
       return {
           Users: [],
+          Province: [],
+          District: [],
           showModal: false,
           currentUser: {
               user_id: "",
@@ -100,23 +116,61 @@ export default {
               district: "",
               province: "",
           },
+          currentProvince: {
+              province_id: "",
+              province_name: "",
+          },
+          currentDistrict: {
+              district_id: "",
+              province_id_fk: "",
+              district_name: "",
+          },
           modalTitle: "",
           modalAction: "",
       };
   },
   mounted() {
       this.fetchUsers();
+      this.fetchDistrict();
+      this.fetchProvince();
+  },
+  computed: {
+    filteredDistricts() {
+      return this.District.filter(
+        (district) => district.province_id_fk === this.currentProvince.province_id
+      );
+    },
   },
   methods: {
     //---------------------- ດຶງ ຂໍ້ມູນ ມາ ສະ ແດງ ----------------
       async fetchUsers() {
           try {
-              const response = await ax.get("http://localhost:5000/users");
+              const response = await ax.get(`${api}/users`);
               this.Users = response.data;
           } catch (error) {
               console.error("Error fetching users:", error);
           }
       },
+      async fetchProvince() {
+          try {
+              const response = await ax.get(`${api}/province`);
+              this.Province = response.data;
+              console.log(response.data)
+          } catch (error) {
+              console.error("Error fetching province:", error);
+          }
+      },
+      async fetchDistrict() {
+          try {
+              const response = await ax.get(`${api}/district`);
+              this.District = response.data;
+          } catch (error) {
+              console.error("Error fetching district:", error);
+          }
+      },
+      updateDistricts() {
+      this.currentDistrict.district_id = ""; // Reset the selected district when province changes
+    },
       //---------------------------- ຂຶ້ນ popup (ໜ້າ ຕ່າງ ລອຍ) -------------
       openModal(action, user = null) { 
           this.showModal = true;
@@ -131,43 +185,94 @@ export default {
                   district: "",
                   province: "",
               };
+              this.currentProvince.province_id = ""; // Reset province
+              this.currentDistrict.district_id = ""; // Reset district
+
           } else if (action === "Edit") {
               this.modalTitle = "Edit User";
               this.modalAction = "Update";
               this.currentUser = { ...user };
+               // Find province_id and district_id based on names
+              const province = this.Province.find(
+                  (p) => p.province_name === user.province
+              );
+              const district = this.District.find(
+                  (d) => d.district_name === user.district
+              );
+              this.currentProvince.province_id = province ? province.province_id : "";
+              this.currentDistrict.district_id = district ? district.district_id : "";
           }
       },
       closeModal() {
           this.showModal = false;
       },
+      
       async submitUser() {
-          try {
-              if (this.modalAction === "Save") {
-                  await ax.post("http://localhost:5000/users", this.currentUser);
-              } else {
-                  await ax.put(
-                      `http://localhost:5000/users/${this.currentUser.user_id}`,
-                      this.currentUser
-                  );
-              }
-              this.fetchUsers();
-              this.closeModal();
-          } catch (error) {
-              console.error("Error submitting user:", error);
-          }
-      },
+        try {
+            // Find the names of the selected province and district
+            const selectedProvince = this.Province.find(
+                (province) => province.province_id === this.currentProvince.province_id
+            );
+            const selectedDistrict = this.District.find(
+                (district) => district.district_id === this.currentDistrict.district_id
+            );
+
+            // Update the currentUser object with the names
+            this.currentUser.province = selectedProvince ? selectedProvince.province_name : "";
+            this.currentUser.district = selectedDistrict ? selectedDistrict.district_name : "";
+
+            if (this.modalAction === "Save") {
+                await ax.post(`${api}/users`, this.currentUser);
+            } else {
+                await ax.put(
+                    `${api}/users/${this.currentUser.user_id}`,
+                    this.currentUser
+                );
+            }
+
+            this.fetchUsers(); // Refresh the list
+            this.closeModal(); // Close the modal
+        } catch (error) {
+            console.error("Error submitting user:", error);
+        }
+    },
+
       editUser(user) {
           this.openModal("Edit", user);
       },
       async deleteUser(user_id) {
-          if (confirm("Are you sure you want to delete this user?")) {
+        //<<------------------JavaScript Confirm--------------->>
+
+          // if (confirm("Are you sure you want to delete this user?")) {
+          //     try {
+          //         await ax.delete(`${api}/users/${user_id}`);
+          //         this.fetchUsers();
+          //     } catch (error) {
+          //         console.error("Error deleting user:", error);
+          //     }
+          // }
+          Swat.fire({
+            title: 'Are you sure?.',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            iconColor: 'orange',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            confirmButtonColor: 'green',
+            cancelButtonText: 'Cancel',
+            cancelButtonColor: 'red',
+          }).then(async (result) => {
+            if (result.isConfirmed) {
               try {
-                  await ax.delete(`http://localhost:5000/users/${user_id}`);
-                  this.fetchUsers();
+                await ax.delete(`${api}/users/${user_id}`);
+                Swat.fire('Deleted!', 'user has been deleted!', 'success');
+                this.fetchUsers()
               } catch (error) {
-                  console.error("Error deleting user:", error);
+                console.error("Error deleting user:", error);
+                Swat.fire("Error!", "Unable to delete user.", "error");
               }
-          }
+            }
+          })
       },
   },
 };
@@ -289,6 +394,12 @@ export default {
 }
 
 .form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.form-group select {
   width: 100%;
   padding: 8px;
   border: 1px solid #ddd;

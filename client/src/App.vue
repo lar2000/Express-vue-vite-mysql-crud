@@ -2,7 +2,7 @@
   <div id="app">
     <nav>
       <ul>
-        <li><router-link to="/address">City</router-link></li>
+        <li><router-link to="/city">City</router-link></li>
         <li><router-link to="/users">Users</router-link></li>
         <li><router-link to="/item-list">item</router-link></li>
       </ul>

@@ -15,7 +15,7 @@
         </thead>
       <tbody>
 <!----------------------------- Loop ຂອງ ຂໍ້ມູນ ທີ ສະ ແດງ -------------------------------->
-        <tr v-for="city in city" :key="city.id">
+        <tr v-for="city in City" :key="city.id">
           <td>{{ city.village_id }}</td>
           <td>{{ city.village_name }}</td>
           <td>{{ city.district_id }}</td>
@@ -30,12 +30,13 @@
 </template>
   
 <script>
+  import api  from '../http'
   import axios from 'axios';
   
   export default {
     data() {
       return {
-        city: [], // Store the fetched city data
+        City: [], // Store the fetched city data
       };
     },
     mounted() {
@@ -44,8 +45,8 @@
     methods: {
       async fetchCity() {
         try { 
-          const response = await axios.get('http://localhost:5000/city'); // API ດຶງ ຂໍ້ມູນ
-          this.city = response.data; // ເກັບ ຂໍ້ມູນ ທີ ດຶງ ມາ ໄວ້ ໃນ city
+          const response = await axios.get(`${api}/city`); // API ດຶງ ຂໍ້ມູນ
+          this.City = response.data; // ເກັບ ຂໍ້ມູນ ທີ ດຶງ ມາ ໄວ້ ໃນ city
         } catch (error) {
           console.error('Error fetching city:', error);
         }

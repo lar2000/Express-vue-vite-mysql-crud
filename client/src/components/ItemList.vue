@@ -40,6 +40,7 @@
 </template>
 
 <script>
+import api from '../http'
 import axios from 'axios';
 import Swat from 'sweetalert2';
 
@@ -62,7 +63,7 @@ export default {
   },
   methods: {
     async fetchItems() {
-      const response = await axios.get('http://localhost:5000/items');
+      const response = await axios.get(`${api}/items`);
       this.items = response.data;
     },
     resetForm() {
@@ -76,7 +77,7 @@ export default {
     }
   },
     async addItem() {
-      await axios.post('http://localhost:5000/items', this.newItem);
+      await axios.post(`${api}/items`, this.newItem);
       this.newItem.name = '';
       this.newItem.description = '';
       this.showAddForm = false; 
@@ -104,12 +105,15 @@ export default {
           //   return;
           // }
 
-          // ## Sweetalert confrim-------->>
+          // ## Sweet alert confirm-------->>
           const confUpdate = await Swat.fire ({
             title: 'Are you sure?',
             text: 'Do you want to update this?',
             icon: 'warning',
+            iconColor:'orange',
             showCancelButton: true,
+            confirmButtonColor:'green',
+            cancelButtonColor: 'red',
             confirmButtonText: 'Yes, update it!',
             cancelButtonText: 'Cancel'
           });
@@ -117,14 +121,14 @@ export default {
               return;
             }
           // If we are editing, send a PUT request to update the item
-          await axios.put(`http://localhost:5000/items/${this.currentItemId}`, this.newItem);
+          await axios.put(`${api}/items/${this.currentItemId}`, this.newItem);
           //console.log("Item updated successfully");
           Swat.fire('Updated!', 'Updated successfully.!', 'success');
 
           this.isEditing = false;
         } else {
           // If we are adding, send a POST request
-          const response = await axios.post('http://localhost:5000/items', this.newItem);
+          const response = await axios.post(`${api}/items`/items, this.newItem);
           //console.log("New item added successfully:", response.data);
           Swat.fire('Added!', 'Added successfully!', 'success')
         }
@@ -142,7 +146,7 @@ export default {
     },
     async deleteItem(id) {
 
-      // ## JavaScript confrim-------------->>>
+      // ## JavaScript confirm-------------->>>
       // const confDelete = confirm('Are you sure you want to delete?');
       // if (!confDelete) {
       //   return;
@@ -151,13 +155,16 @@ export default {
         title: 'Are you sure?',
         text: 'This action cannot be undone!',
         icon: 'warning',
+        iconColor:'orange',
         showCancelButton: true,
         confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel'
+        confirmButtonColor: 'green',
+        cancelButtonText: 'Cancel',
+        cancelButtonColor: 'red'
       });
           if (confDelete.isConfirmed) {
         try {
-          await axios.delete(`http://localhost:5000/items/${id}`);
+          await axios.delete(`${api}/items/${id}`);
           Swat.fire('Deleted!', 'The item has been deleted successfully.', 'success');
           this.fetchItems();
         } catch (error) {
