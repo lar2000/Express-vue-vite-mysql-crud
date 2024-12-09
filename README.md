@@ -19,11 +19,11 @@ Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://
 ```sh
 npm install
 
-npm run serve   
+npm run dev
 
 OR   
 
-node server.js
+nodemon server/server.js
 ```
 
 ## Compile and Hot-Reload for Development
